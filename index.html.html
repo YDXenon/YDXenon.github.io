@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>终末地专武装备原件机</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
+    body{background:#fff;padding:20px;color:#222}
+    .container{max-width:1000px;margin:0 auto}
+    .title{text-align:center;font-size:26px;font-weight:700;margin-bottom:20px;color:#003c7d}
+    .btn-box{text-align:center;margin-bottom:24px}
+    .btn{padding:12px 32px;background:#007bff;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer}
+    .btn:hover{background:#0056b3}
+    .top-row{display:flex;gap:20px;margin-bottom:30px}
+    .card{flex:1;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:20px}
+    .card-title{font-size:18px;font-weight:700;margin-bottom:14px;color:#003366}
+    table{width:100%;border-collapse:collapse}
+    td{padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:15px}
+    .label{font-weight:600;width:130px}
+    .red{color:#dc3545}
+    .chart-box{max-width:550px;margin:0 auto;position:relative;height:500px;margin-bottom:20px}
+    canvas{width:100%;height:100%}
+    .dot{position:absolute;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+    .dot-red{background:#e53e3e}
+    .dot-blue{background:#3182ce}
+    .dot-green{background:#38a169}
+    .legend{display:flex;justify-content:center;gap:24px;margin-top:12px;font-size:14px}
+    .legend-item{display:flex;align-items:center;gap:6px}
+    .label-text{position:absolute;font-weight:bold;font-size:13px;transform:translate(-50%,-50%);white-space:nowrap;text-align:center}
+    @media(max-width:768px){.top-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<audio id="clickSound" preload="auto">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
+</audio>
+
+<div class="container">
+    <div class="title">终末地专武装备原件机</div>
+    <div class="btn-box"><button class="btn" onclick="playAndRun()">武库申领</button></div>
+    <div class="top-row">
+        <div class="card">
+            <div class="card-title">专武配置</div>
+            <table id="table1"></table>
+        </div>
+        <div class="card">
+            <div class="card-title">基质注入</div>
+            <table id="table2"></table>
+        </div>
+    </div>
+    <div class="chart-box">
+        <canvas id="canvas"></canvas>
+        <div class="dot dot-red" id="d1"></div>
+        <div class="dot dot-blue" id="d2"></div>
+        <div class="dot dot-green" id="d3"></div>
+        <div id="labels"></div>
+    </div>
+    <div class="legend">
+        <div class="legend-item"><div class="dot dot-red"></div>基础属性</div>
+        <div class="legend-item"><div class="dot dot-blue"></div>附加属性</div>
+        <div class="legend-item"><div class="dot dot-green"></div>技能属性</div>
+    </div>
+</div>
+
+<script>
+const titles = ["武器类型","研发设计方","主材","辅材","施术核心","源石技艺回路","供能模块","造价"];
+const attr5  = ["敏捷","力量","意志","智识","主属性"];
+const attr12 = ["攻击","生命","物理伤害","灼热伤害","电磁伤害","寒冷伤害","自然伤害","暴击率","源石技艺","终结技效率","法术伤害","治疗效率"];
+const skill14 = ["强攻","追袭","昂扬","残暴","医疗","迸发","流转","压制","粉碎","巧技","附术","切骨","夜幕","效益"];
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const clickSound = document.getElementById("clickSound");
+function resize(){const m=Math.min(550,window.innerWidth-30);canvas.width=m;canvas.height=m;}
+window.onresize=resize;resize();
+
+function rnd(){return Math.floor(Math.random()*101)+1;}
+
+function g1(){const r=rnd();if(r<=20)return ["施术单元",r];if(r<=40)return ["手铳",r];if(r<=60)return ["单手剑",r];if(r<=80)return ["双手剑",r];if(r<=100)return ["长柄武器",r];return ["自定义",101];}
+function g2(){const r=rnd();if(r<=30)return ["终末地工业",r];if(r<=45)return ["宏山选剑局",r];if(r<=55)return ["梅什科工业",r];if(r<=65)return ["北境重工支援所",r];if(r<=75)return ["罗德岛",r];if(r<=80)return ["轻超域技术实验室",r];if(r<=85)return ["雷神工业",r];if(r<=90)return ["巫术时刻",r];if(r<=95)return ["熔炉要塞",r];if(r<=99)return ["特里格拉夫军工厂",r];if(r===100)return ["产自荒野",r];return ["自定义",101];}
+function g3(){const r=rnd();if(r<=10)return ["源矿",r];if(r<=20)return ["蓝铁矿",r];if(r<=30)return ["紫晶矿",r];if(r<=35)return ["赤铜矿",r];if(r<=40)return ["原木",r];if(r<=45)return ["坚硬异香石",r];if(r<=50)return ["晶体外壳",r];if(r<=55)return ["紫晶纤维",r];if(r<=60)return ["蓝铁块",r];if(r<=65)return ["稳定碳块",r];if(r<=70)return ["钢块",r];if(r<=72)return ["蓝铁装备原件",r];if(r<=74)return ["紫晶装备原件",r];if(r===75)return ["息壤装备原件",r];if(r===76)return ["赫铜装备原件",r];if(r<=78)return ["基础航天建材",r];if(r===79)return ["高级航天建材",r];if(r===80)return ["雅各布的遗产",r];if(r<=83)return ["强固模具",r];if(r<=85)return ["重型强固模具",r];if(r<=90)return ["武器检查单元",r];if(r<=93)return ["武器检查装置",r];if(r<=95)return ["武器检查套组",r];if(r<=100)return ["D96钢样品四",r];return ["自定义",101];}
+function g4(){const r=rnd();if(r<=10)return ["源矿",r];if(r<=20)return ["蓝铁矿",r];if(r<=30)return ["紫晶矿",r];if(r<=35)return ["赤铜矿",r];if(r<=40)return ["原木",r];if(r<=45)return ["中空异香石",r];if(r<=50)return ["血菌",r];if(r<=55)return ["星门菌",r];if(r<=60)return ["重红柱状菌",r];if(r<=65)return ["岩天使叶",r];if(r<=70)return ["受蚀玉化叶",r];if(r<=75)return ["至菌多齿叶",r];if(r===76)return ["高晶纤维",r];if(r<=78)return ["基础航天建材",r];if(r===79)return ["高级航天建材",r];if(r===80)return ["彪兽的长绒",r];if(r<=83)return ["强固模具",r];if(r<=85)return ["重型强固模具",r];if(r<=90)return ["武器检查单元",r];if(r<=93)return ["武器检查装置",r];if(r<=95)return ["武器检查套组",r];if(r<=100)return ["D96钢样品四",r];return ["自定义",101];}
+function g5(){const r=rnd();if(r===1)return ["驼兽粪便",r];if(r<=5)return ["水灯虫的灯坠",r];if(r<=10)return ["天然晶城锭",r];if(r<=15)return ["回响尘埃",r];if(r<=20)return ["导能肖像石",r];if(r<=30)return ["武陵石",r];if(r<=40)return ["燎石",r];if(r<=50)return ["重黯石",r];if(r<=55)return ["赫铜块",r];if(r<=60)return ["壤晶",r];if(r<=65)return ["密制晶体",r];if(r<=70)return ["龙泡泡蔬菜冻",r];if(r<=75)return ["协议棱柱组",r];if(r<=80)return ["协议圆盘组",r];if(r<=85)return ["快子遴选晶格",r];if(r<=90)return ["三相纳米片",r];if(r<=95)return ["醚质",r];if(r<=98)return ["醚质晶块",r];if(r===99)return ["拓展核心",r];if(r===100)return ["星门锁",r];return ["自定义",101];}
+function g6(){const r=rnd();if(r<=5)return ["坚韧的水",r];if(r<=10)return ["天然气泡水",r];if(r<=13)return ["甜腻黑水",r];if(r<=15)return ["速成佳酿",r];if(r<=18)return ["液化息壤",r];if(r<=20)return ["液化重息壤",r];if(r<=25)return ["赤铜溶液",r];if(r<=30)return ["赫铜溶液",r];if(r<=35)return ["锦草溶液",r];if(r<=40)return ["芽针溶液",r];if(r<=45)return ["正本补元汤剂",r];if(r<=50)return ["优质锦草软饮",r];if(r<=60)return ["冷却脂",r];if(r<=70)return ["武陵精锻助剂",r];if(r<=75)return ["超距辉映管",r];if(r<=80)return ["象限拟合液",r];if(r<=90)return ["理智萃取器",r];if(r<=95)return ["罗盘",r];if(r<=99)return ["探测器",r];if(r===100)return ["扩容演算芯片",r];return ["自定义",101];}
+function g7(){const r=rnd();if(r<=5)return ["异色油脂",r];if(r<=15)return ["高能异香石",r];if(r<=20)return ["球刺兽的肝脏",r];if(r<=40)return ["低容武陵电池",r];if(r<=50)return ["中容武陵电池",r];if(r<=70)return ["中容谷地电池",r];if(r<=80)return ["高容谷地电池",r];if(r<=85)return ["约翰老爹汉堡",r];if(r<=90)return ["武陵炒饭",r];if(r<=100)return ["协议棱柱组",r];return ["自定义",101];}
+function g8(){const r=rnd();if(r<=10)return ["一文不值",r];if(r<=25)return ["相当廉价",r];if(r<=50)return ["价格亲民",r];if(r<=70)return ["较为贵重",r];if(r<=85)return ["贵重品",r];if(r<=95)return ["极为昂贵",r];if(r<=100)return ["价值连城",r];return ["足以买下整个文明环带",101];}
+
+let realValues = [];
+
+// 点击播放音效 + 运行
+function playAndRun() {
+  clickSound.currentTime = 0;
+  clickSound.play().catch(()=>{});
+  run();
+}
+
+function run(){
+    const res = [g1(),g2(),g3(),g4(),g5(),g6(),g7(),g8()];
+    const names = res.map(x=>x[0]);
+    realValues = res.map(x=>x[1]);
+    renderTable1(names);
+    drawRadar(names, realValues);
+}
+
+function renderTable1(list){
+    let h = "";
+    list.forEach((v,i)=>{
+        const c = v==="自定义" ? "red" : "";
+        h += `<tr><td class="label">${titles[i]}：</td><td class="${c}">${v}</td></tr>`;
+    });
+    document.getElementById("table1").innerHTML = h;
+}
+
+function drawRadar(names,values){
+    const w=canvas.width, h=canvas.height, cx=w/2, cy=h/2;
+    const maxR=Math.min(w,h)*0.38;
+    const scale=maxR/101;
+    const total=8;
+    ctx.clearRect(0,0,w,h);
+    document.getElementById("labels").innerHTML = "";
+
+    for(let r=20;r<=100;r+=20){
+        ctx.beginPath();
+        for(let i=0;i<total;i++){
+            const a=i*2*Math.PI/total;
+            const x=cx+r*scale*Math.cos(a);
+            const y=cy+r*scale*Math.sin(a);
+            i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+        }
+        ctx.closePath();ctx.strokeStyle="#eee";ctx.stroke();
+    }
+    for(let i=0;i<total;i++){
+        const a=i*2*Math.PI/total;
+        ctx.beginPath();ctx.moveTo(cx,cy);
+        ctx.lineTo(cx+maxR*Math.cos(a),cy+maxR*Math.sin(a));
+        ctx.strokeStyle="#ddd";ctx.stroke();
+    }
+    ctx.beginPath();
+    for(let i=0;i<total;i++){
+        const a=i*2*Math.PI/total;
+        const x=cx+values[i]*scale*Math.cos(a);
+        const y=cy+values[i]*scale*Math.sin(a);
+        i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.closePath();ctx.fillStyle="rgba(49,130,206,0.1)";ctx.fill();ctx.strokeStyle="#3182ce";ctx.stroke();
+    for(let i=0;i<total;i++){
+        const a=i*2*Math.PI/total;
+        const x=cx+values[i]*scale*Math.cos(a);
+        const y=cy+values[i]*scale*Math.sin(a);
+        ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle="#004a9e";ctx.fill();
+    }
+
+    // 标签：主材单独上移避开图例
+    for(let i=0;i<total;i++){
+        const a=i*2*Math.PI/total;
+        const extraUp = (i === 2) ? 25 : 0; // 主材 = 索引2，上移25px
+        const lx=cx+(maxR+40)*Math.cos(a);
+        const ly=cy+(maxR+40)*Math.sin(a) - extraUp;
+        
+        const div=document.createElement("div");
+        div.className="label-text";
+        div.style.left=lx+"px";
+        div.style.top=ly+"px";
+        const c=names[i]==="自定义"?"color:red;":"";
+        div.innerHTML=`<b>${titles[i]}</b><br><span style='font-size:12px;${c}'>${names[i]}</span>`;
+        document.getElementById("labels").appendChild(div);
+    }
+
+    function randomPointInRadar(){
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * maxR * 0.8;
+        return {x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle)};
+    }
+    const p1 = randomPointInRadar();
+    const p2 = randomPointInRadar();
+
+    let sx=0,sy=0;values.forEach((v,i)=>{const a=i*2*Math.PI/total;sx+=v*Math.cos(a);sy+=v*Math.sin(a);});
+    const gx = cx + (sx/total)*scale;
+    const gy = cy + (sy/total)*scale;
+
+    document.getElementById("d1").style.left = p1.x+"px";
+    document.getElementById("d1").style.top  = p1.y+"px";
+    document.getElementById("d2").style.left = p2.x+"px";
+    document.getElementById("d2").style.top  = p2.y+"px";
+    document.getElementById("d3").style.left = gx+"px";
+    document.getElementById("d3").style.top  = gy+"px";
+
+    const deg=(x,y)=>{let d=Math.atan2(y-cy,x-cx)*180/Math.PI;return d<0?d+360:d;};
+    const len=(x,y)=>Math.hypot(x-cx,y-cy)/scale;
+    const lv=d=>d<=20?"小":d<=50?"中":"大";
+
+    const rDeg=deg(p1.x,p1.y), rLen=len(p1.x,p1.y), rLv=lv(rLen);
+    const bDeg=deg(p2.x,p2.y), bLen=len(p2.x,p2.y), bLv=lv(bLen);
+    const gDeg=deg(gx,gy);
+
+    const rAttr = attr5[Math.floor((rDeg/360)*5)%5];
+    const bAttr = attr12[Math.floor((bDeg/360)*12)%12];
+    const gSkill = skill14[Math.floor((gDeg/360)*14)%14];
+
+    let quality = "高纯";
+    if(rLv==="小" || bLv==="小") quality="净态";
+    if(rLv==="大" && bLv==="大") quality="无暇";
+
+    document.getElementById("table2").innerHTML = `
+    <tr><td class="label">品质：</td><td>${quality}</td></tr>
+    <tr><td class="label">基础属性：</td><td>${rAttr}提升·${rLv}</td></tr>
+    <tr><td class="label">附加属性：</td><td>${bAttr}提升·${bLv}</td></tr>
+    <tr><td class="label">技能属性：</td><td>${gSkill}</td></tr>
+    `;
+}
+run();
+</script>
+</body>
+</html>
